@@ -195,6 +195,28 @@ tbody tr:hover { background: #f5f8f2; }
 .badge.asr { color: var(--blue); border-color: #b9cfe0; background: #eef6fb; }
 .badge.warn { color: var(--amber); border-color: #e0c893; background: #fff8e6; }
 .badge.source { color: var(--green); border-color: #b9d6c8; background: #edf8f1; }
+.mobile-label { display: none; }
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  z-index: 80;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border: 1px solid #b9d6c8;
+  border-radius: 8px;
+  background: #143e2d;
+  color: #fff;
+  box-shadow: 0 12px 32px rgba(24, 35, 28, .18);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 10px);
+  transition: opacity .16s ease, transform .16s ease;
+}
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
 
 body:not(.show-data) .data-col { display: none; }
 body.drawer-open { overflow: hidden; }
@@ -389,6 +411,8 @@ body.drawer-open { overflow: hidden; }
     color: var(--ink);
     cursor: pointer;
   }
+  .word-card-actions .desktop-label { display: none; }
+  .word-card-actions .mobile-label { display: inline; }
   .pager button { min-height: 44px; min-width: 88px; }
   .about-grid { grid-template-columns: 1fr; }
   .site-footer { padding: 14px 16px; }

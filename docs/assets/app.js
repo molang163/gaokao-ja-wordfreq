@@ -57,7 +57,76 @@ function unpackIndexWords(payload) {
 
 function mojiUrl(word) {
   const base = state.meta.moji_search_base || 'https://www.mojidict.com/searchText/';
-  return `${base}${encodeURIComponent(word.dict_query || word.display_form || '')}`;
+  return `${base}${word.dict_query || word.display_form || ''}`;
+}
+
+function mojiAttrs(word) {
+  const query = word.dict_query || word.display_form || '';
+  return `href="${escapeHtml(mojiUrl(word))}" target="_blank" rel="noopener" data-stop-row="true" data-moji-query="${escapeHtml(query)}"`;
+}
+
+function isMobileMojiFallback() {
+  return window.innerWidth <= 760 || window.matchMedia?.('(pointer: coarse)')?.matches;
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  textarea.style.top = '0';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  let copied = false;
+  try {
+    copied = document.execCommand('copy');
+  } catch (error) {
+    copied = false;
+  }
+  textarea.remove();
+  return copied;
+}
+
+async function copyText(text) {
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (error) {
+      return fallbackCopy(text);
+    }
+  }
+  return fallbackCopy(text);
+}
+
+function showToast(message) {
+  let toast = el('toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'toast';
+    toast.className = 'toast';
+    toast.setAttribute('role', 'status');
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add('show');
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => toast.classList.remove('show'), 3600);
+}
+
+function handleMojiLinkClick(event, link) {
+  if (!isMobileMojiFallback()) return;
+  const query = link.dataset.mojiQuery || '';
+  if (!query) return;
+  event.preventDefault();
+  event.stopPropagation();
+  copyText(query).then(copied => {
+    showToast(copied
+      ? `已复制「${query}」，可在 MOJi App 或其他词典里粘贴查询。`
+      : `请复制这个词形查询：${query}`);
+  });
 }
 
 function scopeHasAsr(scope) {
@@ -249,7 +318,7 @@ function renderTable(rows) {
       <td class="count">${fmt(word.counts.all)}</td>
       <td class="data-col">${fmt(paperCount(word, scope))}</td>
       <td>${sourceBadges(word, scope)}</td>
-      <td><a href="${escapeHtml(mojiUrl(word))}" target="_blank" rel="noopener" data-stop-row="true">Moji</a></td>
+      <td><a ${mojiAttrs(word)}>Moji</a></td>
     </tr>
   `).join('');
   renderWordCards(pageRows, scope);
@@ -284,7 +353,7 @@ function renderWordCards(pageRows, scope) {
       <div class="word-card-tags">${sourceBadges(word, scope)}</div>
       <div class="word-card-actions">
         <button type="button" data-open-detail="${escapeHtml(word.word_id)}">详情</button>
-        <a href="${escapeHtml(mojiUrl(word))}" target="_blank" rel="noopener" data-stop-row="true">Moji</a>
+        <a ${mojiAttrs(word)}><span class="desktop-label">Moji</span><span class="mobile-label">复制查词</span></a>
       </div>
     </article>
   `).join('');
@@ -478,7 +547,7 @@ async function openDrawer(wordId, returnFocusTarget = null) {
   el('drawer-body').innerHTML = `
     <h2 class="detail-title">${escapeHtml(word.display_form)}</h2>
     <p class="detail-meta">原形：${escapeHtml(word.lemma_form)} / 读音：${escapeHtml(word.reading)} / 词性：${escapeHtml(word.pos_label)}</p>
-    <p><a href="${escapeHtml(word.moji_url)}" target="_blank" rel="noopener">打开 Moji：${escapeHtml(word.dict_query)}</a></p>
+    <p><a ${mojiAttrs(word)}>打开 Moji：${escapeHtml(word.dict_query)}</a></p>
 
     <section class="detail-section">
       <h3>词典解释</h3>
@@ -565,6 +634,10 @@ async function init() {
   el('next-page').addEventListener('click', () => { state.page += 1; render(); });
   el('drawer-close').addEventListener('click', closeDrawer);
   el('drawer-backdrop').addEventListener('click', closeDrawer);
+  document.addEventListener('click', event => {
+    const link = event.target.closest('[data-moji-query]');
+    if (link) handleMojiLinkClick(event, link);
+  });
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !el('drawer').hidden) closeDrawer();
   });
