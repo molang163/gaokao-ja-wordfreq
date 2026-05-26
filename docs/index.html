@@ -86,6 +86,7 @@
           <tbody id="word-tbody"></tbody>
         </table>
       </div>
+      <div id="word-card-list" class="word-card-list" aria-label="词条列表"></div>
       <div class="pager">
         <button id="prev-page" type="button">上一页</button>
         <span id="page-status"></span>
@@ -131,7 +132,7 @@
   <div id="tooltip" class="tooltip" hidden></div>
 
   <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
-  <aside id="drawer" class="drawer" aria-label="词条详情" aria-hidden="true" hidden>
+  <aside id="drawer" class="drawer" role="dialog" aria-label="词条详情" aria-modal="true" aria-hidden="true" hidden>
     <button id="drawer-close" class="drawer-close" type="button">关闭</button>
     <div id="drawer-body"></div>
   </aside>

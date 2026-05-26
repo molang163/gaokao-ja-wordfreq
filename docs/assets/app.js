@@ -252,10 +252,42 @@ function renderTable(rows) {
       <td><a href="${escapeHtml(mojiUrl(word))}" target="_blank" rel="noopener" data-stop-row="true">Moji</a></td>
     </tr>
   `).join('');
-  el('page-status').textContent = `${fmt(start + 1)}-${fmt(Math.min(start + pageRows.length, rows.length))} / ${fmt(rows.length)}`;
+  renderWordCards(pageRows, scope);
+  const pageStart = rows.length ? start + 1 : 0;
+  el('page-status').textContent = `${fmt(pageStart)}-${fmt(Math.min(start + pageRows.length, rows.length))} / ${fmt(rows.length)}`;
   el('prev-page').disabled = state.page <= 1;
   el('next-page').disabled = state.page >= totalPages;
-  bindRows();
+  bindWordItems();
+}
+
+function renderWordCards(pageRows, scope) {
+  const wrap = el('word-card-list');
+  if (!wrap) return;
+  wrap.innerHTML = pageRows.map(word => `
+    <article class="word-card" data-word-id="${escapeHtml(word.word_id)}" tabindex="0" role="button" aria-label="查看 ${escapeHtml(word.display_form)} 详情">
+      <div class="word-card-main">
+        <div>
+          <div class="word-card-word">${escapeHtml(word.display_form)}</div>
+          <div class="word-card-reading">${escapeHtml(word.reading || '')}${word.pos_label ? ` · ${escapeHtml(word.pos_label)}` : ''}</div>
+        </div>
+        <strong class="word-card-current"><span>当前</span>${fmt(scopeCount(word, scope))}</strong>
+      </div>
+      <div class="word-card-note">
+        原形：${escapeHtml(word.lemma_form || '-')}
+        ${noteFor(word) !== '<span class="muted">-</span>' ? ` / ${noteFor(word)}` : ''}
+      </div>
+      <div class="word-card-metrics">
+        <div><span>当前次数</span><strong>${fmt(scopeCount(word, scope))}</strong></div>
+        <div><span>总次数</span><strong>${fmt(word.counts.all)}</strong></div>
+        <div><span>试卷数</span><strong>${fmt(paperCount(word, scope))}</strong></div>
+      </div>
+      <div class="word-card-tags">${sourceBadges(word, scope)}</div>
+      <div class="word-card-actions">
+        <button type="button" data-open-detail="${escapeHtml(word.word_id)}">详情</button>
+        <a href="${escapeHtml(mojiUrl(word))}" target="_blank" rel="noopener" data-stop-row="true">Moji</a>
+      </div>
+    </article>
+  `).join('');
 }
 
 function render() {
@@ -341,11 +373,13 @@ function tooltipHtml(word, detail = null) {
 
 let activeTooltipWordId = null;
 
-function bindRows() {
+function bindWordItems() {
   const tooltip = el('tooltip');
   document.querySelectorAll('tbody tr[data-word-id]').forEach(row => {
     const word = state.words.find(item => item.word_id === row.dataset.wordId);
+    if (!word) return;
     row.addEventListener('mouseenter', (event) => {
+      if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
       activeTooltipWordId = word.word_id;
       tooltip.innerHTML = tooltipHtml(word);
       tooltip.hidden = false;
@@ -361,7 +395,29 @@ function bindRows() {
     row.addEventListener('mouseleave', () => { activeTooltipWordId = null; tooltip.hidden = true; });
     row.addEventListener('click', (event) => {
       if (event.target.closest('[data-stop-row]')) return;
-      openDrawer(word.word_id);
+      openDrawer(word.word_id, row);
+    });
+  });
+
+  document.querySelectorAll('.word-card[data-word-id]').forEach(card => {
+    const wordId = card.dataset.wordId;
+    card.addEventListener('click', (event) => {
+      if (event.target.closest('[data-stop-row]')) return;
+      openDrawer(wordId, card);
+    });
+    card.addEventListener('keydown', (event) => {
+      if (!['Enter', ' '].includes(event.key)) return;
+      if (event.target.closest('a, button, input, select, textarea')) return;
+      if (event.target.closest('[data-stop-row]')) return;
+      event.preventDefault();
+      openDrawer(wordId, card);
+    });
+  });
+
+  document.querySelectorAll('[data-open-detail]').forEach(button => {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      openDrawer(button.dataset.openDetail, button);
     });
   });
 }
@@ -380,6 +436,7 @@ function bar(label, value, max) {
 }
 
 const detailShardCache = new Map();
+let lastFocusedElement = null;
 
 async function loadWordDetail(wordId) {
   const shard = wordId.slice(0, 2);
@@ -391,7 +448,10 @@ async function loadWordDetail(wordId) {
   return details[wordId];
 }
 
-async function openDrawer(wordId) {
+async function openDrawer(wordId, returnFocusTarget = null) {
+  lastFocusedElement = returnFocusTarget || document.activeElement;
+  activeTooltipWordId = null;
+  el('tooltip').hidden = true;
   const word = await loadWordDetail(wordId);
   const counts = word.counts || {};
   const maxCount = Math.max(counts.solving || 0, counts.listening_prompt || 0, counts.listening_asr || 0, counts.listening_transcript || 0, 1);
@@ -468,6 +528,8 @@ async function openDrawer(wordId) {
   el('drawer-backdrop').hidden = false;
   el('drawer').classList.add('open');
   el('drawer').setAttribute('aria-hidden', 'false');
+  document.body.classList.add('drawer-open');
+  requestAnimationFrame(() => el('drawer-close').focus());
 }
 
 function closeDrawer() {
@@ -475,6 +537,11 @@ function closeDrawer() {
   el('drawer').classList.remove('open');
   el('drawer').setAttribute('aria-hidden', 'true');
   el('drawer').hidden = true;
+  document.body.classList.remove('drawer-open');
+  if (lastFocusedElement && document.contains(lastFocusedElement)) {
+    lastFocusedElement.focus();
+  }
+  lastFocusedElement = null;
 }
 
 async function init() {
@@ -498,6 +565,9 @@ async function init() {
   el('next-page').addEventListener('click', () => { state.page += 1; render(); });
   el('drawer-close').addEventListener('click', closeDrawer);
   el('drawer-backdrop').addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !el('drawer').hidden) closeDrawer();
+  });
   render();
 }
 
