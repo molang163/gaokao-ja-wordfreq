@@ -46,6 +46,7 @@ h3 { margin-bottom: 8px; font-size: 16px; }
 
 .topbar p { margin-bottom: 0; color: var(--muted); }
 .top-actions { display: flex; gap: 14px; align-items: center; white-space: nowrap; }
+.star-link { color: var(--green); font-weight: 700; }
 
 .layout {
   display: grid;
