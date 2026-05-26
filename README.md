@@ -14,6 +14,10 @@ python -m http.server 8000 --directory docs
 
 然后打开 `http://localhost:8000`。
 
+## 统计方法
+
+详细统计口径、去重规则、ASR 说明和公开包边界见 [`methodology.md`](methodology.md)。
+
 ## 数据概览
 
 - 单词条目：4,819
