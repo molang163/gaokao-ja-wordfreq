@@ -13,6 +13,8 @@ const state = {
 
 const el = (id) => document.getElementById(id);
 const fmt = (n) => Number(n || 0).toLocaleString('zh-CN');
+const INDEX_COUNT_KEYS = ['all', 'solving', 'listening_prompt', 'listening_transcript', 'listening_asr', 'listening_heard', 'listening_total'];
+const INDEX_PAPER_COUNT_KEYS = ['all', 'solving', 'listening_prompt', 'listening_heard', 'listening_total'];
 const scopeCount = (word, scope) => Number((word.counts || {})[scope || 'all'] || 0);
 const paperCount = (word, scope) => Number((word.paper_counts || {})[scope || 'all'] || word.paper_counts?.all || 0);
 
@@ -20,6 +22,41 @@ function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[char]));
+}
+
+function objectFromKeys(keys, values) {
+  const out = {};
+  keys.forEach((key, index) => { out[key] = Number(values?.[index] || 0); });
+  return out;
+}
+
+function unpackIndexWords(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (!payload || !Array.isArray(payload.words)) return [];
+  return payload.words.map(row => ({
+    word_id: row[0],
+    display_form: row[1],
+    lemma_form: row[2],
+    reading: row[3],
+    pos_major: row[4],
+    pos_label: row[5],
+    pos_bucket: row[6],
+    group: row[7],
+    counts: objectFromKeys(payload.count_keys || INDEX_COUNT_KEYS, row[8]),
+    paper_counts: objectFromKeys(payload.paper_count_keys || INDEX_PAPER_COUNT_KEYS, row[9]),
+    source_flags: row[10] || [],
+    quality_flags: row[11] || [],
+    dict_query: row[12],
+    dict_query_alt: row[13] || [],
+    surface_variant_count: Number(row[14] || 0),
+    reading_variant_count: Number(row[15] || 0),
+    sense_ambiguous: Boolean(row[16]),
+  }));
+}
+
+function mojiUrl(word) {
+  const base = state.meta.moji_search_base || 'https://www.mojidict.com/searchText/';
+  return `${base}${encodeURIComponent(word.dict_query || word.display_form || '')}`;
 }
 
 function scopeHasAsr(scope) {
@@ -125,7 +162,7 @@ function matchesQuery(word) {
   if (!q) return true;
   const haystack = [
     word.display_form, word.lemma_form, word.reading, word.dict_query,
-    ...(word.dict_query_alt || []), ...(word.variants_preview || []).map(item => item[0])
+    ...(word.dict_query_alt || [])
   ].join(' ').toLowerCase();
   return haystack.includes(q);
 }
@@ -170,7 +207,7 @@ function renderTable(rows) {
       <td class="count">${fmt(word.counts.all)}</td>
       <td class="data-col">${fmt(paperCount(word, scope))}</td>
       <td>${sourceBadges(word, scope)}</td>
-      <td><a href="${escapeHtml(word.moji_url)}" target="_blank" rel="noopener" data-stop-row="true">Moji</a></td>
+      <td><a href="${escapeHtml(mojiUrl(word))}" target="_blank" rel="noopener" data-stop-row="true">Moji</a></td>
     </tr>
   `).join('');
   el('page-status').textContent = `${fmt(start + 1)}-${fmt(Math.min(start + pageRows.length, rows.length))} / ${fmt(rows.length)}`;
@@ -220,7 +257,8 @@ function examplesHtml(examples, compact = false) {
 }
 
 function tooltipHtml(word, detail = null) {
-  const top = (word.top_sources || []).map(src => `<li>${escapeHtml(src.paper_label)}：${escapeHtml(src.source_breakdown || '')}</li>`).join('');
+  const topSources = (detail?.top_sources || word.top_sources || []);
+  const top = topSources.map(src => `<li>${escapeHtml(src.paper_label)}：${escapeHtml(src.source_breakdown || '')}</li>`).join('');
   const warning = (word.quality_flags || []).length
     ? '<p><span class="badge warn">含低覆盖 ASR 来源</span></p>' : '';
   const lookup = word.dict_query && word.dict_query !== word.display_form
@@ -246,7 +284,7 @@ function tooltipHtml(word, detail = null) {
     ${lookup}
     ${warning}
     <strong>高频来源</strong>
-    <ul>${top}</ul>
+    ${top ? `<ul>${top}</ul>` : '<p class="muted">来源加载中…</p>'}
   `;
 }
 
@@ -398,7 +436,7 @@ async function init() {
   state.meta = meta;
   state.stats = stats;
   state.tree = tree;
-  state.words = words;
+  state.words = unpackIndexWords(words);
   el('site-subtitle').textContent = `${meta.subtitle} / ${fmt(meta.word_count)} 个词条`;
   el('asr-note').textContent = meta.asr_note;
   renderTree();
