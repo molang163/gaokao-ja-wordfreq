@@ -186,7 +186,7 @@ body:not(.show-data) .data-col { display: none; }
 .tooltip {
   position: fixed;
   z-index: 50;
-  max-width: 340px;
+  max-width: 460px;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -196,8 +196,13 @@ body:not(.show-data) .data-col { display: none; }
   pointer-events: none;
 }
 .tooltip-title { font-weight: 800; font-size: 16px; margin-bottom: 6px; }
+.tooltip-block { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 8px; }
 .tooltip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; margin: 8px 0; }
 .tooltip ul { margin: 6px 0 0; padding-left: 18px; }
+.example-list { margin: 8px 0 0; padding-left: 18px; }
+.example-list li { margin-bottom: 8px; }
+.example-text { display: block; line-height: 1.55; }
+.example-source { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
 
 .drawer-backdrop {
   position: fixed;

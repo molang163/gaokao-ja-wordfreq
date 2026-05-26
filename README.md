@@ -51,8 +51,10 @@ data/                 # 可下载 CSV / 验证报告 / 脱敏 ASR manifest
 
 ## 版权与公开数据声明
 
-本项目不提供真题原文、PDF、Word、音频或完整转写文本。公开数据仅包含词形、原形、读音、词性、频次、来源类别、年份、试卷级聚合统计与数据质量说明。
+本项目不提供 PDF、Word、音频或完整真题文本。公开页面会为词条展示少量来源标注的高考例句，公开下载仍以词频、来源类别、年份、试卷级聚合统计与数据质量说明为主。
 
 ## 外部词典
 
 页面中的 `Moji` 链接会使用词典形或更适合学习者的查词形式跳转到 MOJi 辞書搜索页。若 MOJi 未来调整搜索路由，只需要修改生成器中的 `MOJI_SEARCH_BASE`。
+
+页面中的简短词典解释来自 JMdict/JMdict-simplified 英文释义。JMdict 原始文件由 Electronic Dictionary Research and Development Group 维护，JSON 转换使用 scriptin/jmdict-simplified。

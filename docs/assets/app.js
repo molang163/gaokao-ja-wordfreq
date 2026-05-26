@@ -195,14 +195,44 @@ function render() {
   renderTable(rows);
 }
 
-function tooltipHtml(word) {
+function dictionaryHtml(dictionary, compact = false) {
+  if (!dictionary || !(dictionary.glosses || []).length) {
+    return '<p class="muted">暂无 JMdict 释义，建议打开 Moji 查询。</p>';
+  }
+  const glosses = (dictionary.glosses || []).slice(0, compact ? 3 : 4).map(escapeHtml).join('; ');
+  const head = [dictionary.headword, dictionary.reading].filter(Boolean).map(escapeHtml).join(' / ');
+  return `<p><strong>${head || 'JMdict'}</strong><br><span class="muted">释义（英）：${glosses}</span></p>`;
+}
+
+function examplesHtml(examples, compact = false) {
+  const rows = (examples || []).slice(0, compact ? 2 : 5);
+  if (!rows.length) return '<p class="muted">暂无可展示例句。</p>';
+  return `<ul class="example-list">${rows.map(item => `
+    <li>
+      <span class="example-text">${escapeHtml(item.text)}</span>
+      <span class="example-source">${escapeHtml(item.paper_label)} / ${escapeHtml(item.source)}${item.has_asr ? ' / ASR' : ''}</span>
+    </li>
+  `).join('')}</ul>`;
+}
+
+function tooltipHtml(word, detail = null) {
   const top = (word.top_sources || []).map(src => `<li>${escapeHtml(src.paper_label)}：${escapeHtml(src.source_breakdown || '')}</li>`).join('');
   const warning = (word.quality_flags || []).length
     ? '<p><span class="badge warn">含低覆盖 ASR 来源</span></p>' : '';
   const lookup = word.dict_query && word.dict_query !== word.display_form
     ? `<p class="muted">这个词以变形形式出现，查词时建议查原形：${escapeHtml(word.dict_query)}</p>` : '';
+  const dictionary = detail ? dictionaryHtml(detail.dictionary, true) : '<p class="muted">词典和例句加载中…</p>';
+  const examples = detail ? examplesHtml(detail.examples, true) : '';
   return `
     <div class="tooltip-title">${escapeHtml(word.display_form)} / ${escapeHtml(word.lemma_form)} / ${escapeHtml(word.pos_label)}</div>
+    <div class="tooltip-block">
+      <strong>词典解释</strong>
+      ${dictionary}
+    </div>
+    <div class="tooltip-block">
+      <strong>高考例句</strong>
+      ${examples}
+    </div>
     <div class="tooltip-grid">
       <span>总次数</span><strong>${fmt(word.counts.all)}</strong>
       <span>解题</span><strong>${fmt(word.counts.solving)}</strong>
@@ -216,17 +246,26 @@ function tooltipHtml(word) {
   `;
 }
 
+let activeTooltipWordId = null;
+
 function bindRows() {
   const tooltip = el('tooltip');
   document.querySelectorAll('tbody tr[data-word-id]').forEach(row => {
     const word = state.words.find(item => item.word_id === row.dataset.wordId);
     row.addEventListener('mouseenter', (event) => {
+      activeTooltipWordId = word.word_id;
       tooltip.innerHTML = tooltipHtml(word);
       tooltip.hidden = false;
       moveTooltip(event);
+      loadWordDetail(word.word_id).then(detail => {
+        if (activeTooltipWordId === word.word_id && !tooltip.hidden) {
+          tooltip.innerHTML = tooltipHtml(word, detail);
+          moveTooltip(event);
+        }
+      }).catch(() => {});
     });
     row.addEventListener('mousemove', moveTooltip);
-    row.addEventListener('mouseleave', () => { tooltip.hidden = true; });
+    row.addEventListener('mouseleave', () => { activeTooltipWordId = null; tooltip.hidden = true; });
     row.addEventListener('click', (event) => {
       if (event.target.closest('[data-stop-row]')) return;
       openDrawer(word.word_id);
@@ -287,6 +326,17 @@ async function openDrawer(wordId) {
     <h2 class="detail-title">${escapeHtml(word.display_form)}</h2>
     <p class="detail-meta">原形：${escapeHtml(word.lemma_form)} / 读音：${escapeHtml(word.reading)} / 词性：${escapeHtml(word.pos_label)}</p>
     <p><a href="${escapeHtml(word.moji_url)}" target="_blank" rel="noopener">打开 Moji：${escapeHtml(word.dict_query)}</a></p>
+
+    <section class="detail-section">
+      <h3>词典解释</h3>
+      ${dictionaryHtml(word.dictionary)}
+      <p class="muted">释义来自 JMdict/JMdict-simplified；中文释义可继续通过 Moji 查询。</p>
+    </section>
+
+    <section class="detail-section">
+      <h3>高考例句</h3>
+      ${examplesHtml(word.examples)}
+    </section>
 
     <section class="detail-section">
       <h3>出现概览</h3>
