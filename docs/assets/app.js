@@ -4,7 +4,8 @@ const state = {
   meta: {},
   stats: {},
   activeFilter: { scope: 'solving', group: 'content' },
-  activeLabel: '阅读高频实词',
+  activeLabel: '阅读/解题高频实词',
+  activeCategoryId: '',
   query: '',
   sort: 'current',
   page: 1,
@@ -129,6 +130,7 @@ function renderTree() {
     }
     tree.appendChild(wrap);
   }
+  renderQuickEntries();
   select.addEventListener('change', () => {
     const item = flattenTree(state.tree).find(node => node.id === select.value);
     if (item) setCategory(item);
@@ -137,11 +139,33 @@ function renderTree() {
   setCategory(defaultItem, false);
 }
 
+function renderQuickEntries() {
+  const wrap = el('quick-entries');
+  if (!wrap) return;
+  const group = state.tree.find(item => item.id === 'home');
+  const entries = (group?.children || []).slice(0, 4);
+  wrap.innerHTML = '';
+  for (const child of entries) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'quick-button';
+    button.dataset.id = child.id;
+    button.textContent = child.label;
+    button.addEventListener('click', () => setCategory(child));
+    wrap.appendChild(button);
+  }
+}
+
 function setCategory(item, shouldRender = true) {
   state.activeFilter = item.filter || { scope: 'all' };
   state.activeLabel = item.label;
+  state.activeCategoryId = item.id;
+  if (state.activeFilter.sort) {
+    state.sort = state.activeFilter.sort;
+    if (el('sort-select')) el('sort-select').value = state.sort;
+  }
   state.page = 1;
-  document.querySelectorAll('.tree-button').forEach(button => {
+  document.querySelectorAll('.tree-button, .quick-button').forEach(button => {
     button.classList.toggle('active', button.dataset.id === item.id);
   });
   el('category-select').value = item.id;
@@ -167,15 +191,33 @@ function matchesQuery(word) {
   return haystack.includes(q);
 }
 
-function filteredWords() {
-  const scope = state.activeFilter.scope || 'all';
-  const rows = state.words.filter(word => matchesFilter(word) && matchesQuery(word));
-  rows.sort((a, b) => {
-    if (state.sort === 'total') return b.counts.all - a.counts.all;
+function rankComparator(scope) {
+  return (a, b) =>
+    scopeCount(b, scope) - scopeCount(a, scope) ||
+    paperCount(b, scope) - paperCount(a, scope) ||
+    b.counts.all - a.counts.all ||
+    String(a.word_id).localeCompare(String(b.word_id));
+}
+
+function sortComparator(scope) {
+  return (a, b) => {
+    if (state.sort === 'total') return b.counts.all - a.counts.all || rankComparator(scope)(a, b);
     if (state.sort === 'paper') return paperCount(b, scope) - paperCount(a, scope) || scopeCount(b, scope) - scopeCount(a, scope);
     if (state.sort === 'reading') return String(a.reading || a.display_form).localeCompare(String(b.reading || b.display_form), 'ja');
-    return scopeCount(b, scope) - scopeCount(a, scope) || b.counts.all - a.counts.all;
-  });
+    return rankComparator(scope)(a, b);
+  };
+}
+
+function filteredWords() {
+  const filter = state.activeFilter || {};
+  const scope = filter.scope || 'all';
+  let rows = state.words.filter(matchesFilter);
+  if (Number(filter.limit || 0) > 0) {
+    rows.sort(rankComparator(scope));
+    rows = rows.slice(0, Number(filter.limit));
+  }
+  rows = rows.filter(matchesQuery);
+  rows.sort(sortComparator(scope));
   return rows;
 }
 
@@ -218,7 +260,8 @@ function renderTable(rows) {
 
 function render() {
   el('category-title').textContent = state.activeLabel;
-  const scope = state.activeFilter.scope || 'all';
+  const filter = state.activeFilter || {};
+  const scope = filter.scope || 'all';
   const scopeLabels = {
     all: '全部统计范围',
     solving: '阅读和解题文本',
@@ -226,7 +269,15 @@ function render() {
     listening_heard: '听力音频/听到内容，含机器 ASR',
     listening_total: '听力题面 + 听力音频/听到内容',
   };
-  el('category-description').textContent = scopeLabels[scope] || '当前分类';
+  let description = scopeLabels[scope] || '当前分类';
+  if (filter.limit) {
+    description = `按总览出现次数取前 ${filter.limit} 个实词；总览包含阅读/解题、听力题面和听力听到内容。`;
+  } else if (scope === 'solving' && filter.group === 'content') {
+    description = '按阅读、语法题、题干和选项等解题文本中的出现次数排序，默认只展示实词。';
+  } else if (scope === 'listening_total' && filter.group === 'content') {
+    description = '按听力题面 + 听力听到内容排序；听力听到内容含机器 ASR，可能有识别误差。';
+  }
+  el('category-description').textContent = description;
   const rows = filteredWords();
   renderStats(rows);
   renderTable(rows);
