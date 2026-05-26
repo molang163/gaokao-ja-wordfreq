@@ -1,0 +1,1 @@
+{"status":"passed","gate_count":84,"failed_hard_count":0,"failed_soft_count":1,"failed_soft":[{"gate":"manifest_quality_flags_soft_warning","details":"2004 听力音频 ASR 覆盖偏低；公开站点已标记为 low_asr_coverage_2004。"}]}

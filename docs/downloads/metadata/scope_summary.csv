@@ -1,0 +1,6 @@
+scope_id,count_domains,word_rows,by_paper_rows,paper_count,total_count,has_machine_asr
+machine_solving_only,solving,4383,16022,29,72980,False
+machine_listening_question_available,listening_question,805,2103,21,5185,False
+machine_listening_heard_with_asr,listening_asr_approved;listening_transcript_text,1690,5832,25,16932,True
+machine_listening_exam_load_available,listening_asr_approved;listening_question;listening_transcript_text,1790,6368,25,22117,True
+machine_all_available,listening_asr_approved;listening_question;listening_transcript_text;solving,4819,19427,29,95097,True

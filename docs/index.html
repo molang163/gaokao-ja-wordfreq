@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>高考日语真题词频库</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>高考日语真题词频库</h1>
+      <p id="site-subtitle">1998-2025 真题派生词频数据</p>
+    </div>
+    <nav class="top-actions" aria-label="主导航">
+      <a href="#words">词表</a>
+      <a href="#about">说明</a>
+      <a href="downloads/">下载数据</a>
+    </nav>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" aria-label="分类">
+      <div class="mobile-controls">
+        <label for="category-select">分类</label>
+        <select id="category-select"></select>
+      </div>
+      <div id="tree" class="tree"></div>
+      <section class="notice">
+        <strong>数据提示</strong>
+        <p id="asr-note"></p>
+      </section>
+    </aside>
+
+    <section class="content" id="words">
+      <div class="hero-panel">
+        <div>
+          <span class="eyebrow">考生视图</span>
+          <h2 id="category-title">阅读高频实词</h2>
+          <p id="category-description">按当前分类次数排序，点击词条可查看来源明细。</p>
+        </div>
+        <div class="stats-strip" id="stats-strip"></div>
+      </div>
+
+      <div class="toolbar">
+        <label class="search-box">
+          <span>搜索</span>
+          <input id="search-input" type="search" placeholder="单词 / 原形 / 读音">
+        </label>
+        <label>
+          <span>排序</span>
+          <select id="sort-select">
+            <option value="current">当前次数</option>
+            <option value="total">总次数</option>
+            <option value="paper">试卷数</option>
+            <option value="reading">读音</option>
+          </select>
+        </label>
+        <label class="toggle">
+          <input id="data-toggle" type="checkbox">
+          <span>显示数据字段</span>
+        </label>
+      </div>
+
+      <div class="table-shell">
+        <table>
+          <thead>
+            <tr>
+              <th>单词</th>
+              <th>读音</th>
+              <th>词性</th>
+              <th class="data-col">原形</th>
+              <th>备注</th>
+              <th>当前次数</th>
+              <th>总次数</th>
+              <th class="data-col">试卷数</th>
+              <th>标记</th>
+              <th>Moji</th>
+            </tr>
+          </thead>
+          <tbody id="word-tbody"></tbody>
+        </table>
+      </div>
+      <div class="pager">
+        <button id="prev-page" type="button">上一页</button>
+        <span id="page-status"></span>
+        <button id="next-page" type="button">下一页</button>
+      </div>
+    </section>
+  </main>
+
+  <section class="about" id="about">
+    <h2>说明</h2>
+    <div class="about-grid">
+      <article>
+        <h3>统计范围</h3>
+        <p>数据分为总览、阅读/解题、听力题面、听力听到内容和听力综合。听力综合等于听力题面加听力听到内容。</p>
+      </article>
+      <article>
+        <h3>ASR 可信度</h3>
+        <p>2002-2019 听力听到内容主要由自动语音识别转写，未完全人工校对；含 ASR 的词条会显示标记。</p>
+      </article>
+      <article>
+        <h3>低覆盖年份</h3>
+        <p>2004 听力音频 ASR 覆盖偏低，相关听力听到内容词频可能被低估。</p>
+      </article>
+      <article>
+        <h3>公开数据</h3>
+        <p>本项目只公开派生词频和聚合来源，不提供真题原文、PDF、Word、音频或完整转写文本。</p>
+      </article>
+    </div>
+  </section>
+
+  <div id="tooltip" class="tooltip" hidden></div>
+
+  <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+  <aside id="drawer" class="drawer" aria-label="词条详情" aria-hidden="true" hidden>
+    <button id="drawer-close" class="drawer-close" type="button">关闭</button>
+    <div id="drawer-body"></div>
+  </aside>
+
+  <script src="assets/app.js"></script>
+</body>
+</html>
