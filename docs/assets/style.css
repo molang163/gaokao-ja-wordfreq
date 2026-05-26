@@ -253,6 +253,8 @@ body:not(.show-data) .data-col { display: none; }
   padding: 16px;
 }
 .about p { color: var(--muted); margin-bottom: 0; }
+.site-footer { padding: 14px 28px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; background: #fff; }
+.site-footer p { margin: 0; }
 
 @media (max-width: 900px) {
   .topbar { align-items: flex-start; flex-direction: column; padding: 16px; gap: 10px; }
@@ -268,5 +270,6 @@ body:not(.show-data) .data-col { display: none; }
   .search-box input { width: 100%; }
   .toolbar { align-items: stretch; }
   .about-grid { grid-template-columns: 1fr; }
+  .site-footer { padding: 14px 16px; }
   .drawer { padding: 18px; }
 }

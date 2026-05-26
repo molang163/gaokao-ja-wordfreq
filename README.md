@@ -58,3 +58,9 @@ data/                 # 可下载 CSV / 验证报告 / 脱敏 ASR manifest
 页面中的 `Moji` 链接会使用词典形或更适合学习者的查词形式跳转到 MOJi 辞書搜索页。若 MOJi 未来调整搜索路由，只需要修改生成器中的 `MOJI_SEARCH_BASE`。
 
 页面中的简短词典解释默认显示中文短释义，该释义由 qwen-turbo 基于 JMdict/JMdict-simplified 英文义项生成。JMdict 原始文件由 Electronic Dictionary Research and Development Group 维护，JSON 转换使用 scriptin/jmdict-simplified；疑难词建议继续用 MOJi 核对。
+
+## 许可证
+
+- 页面代码：MIT License，见 `LICENSE-CODE.md`。
+- 词频数据、网页数据包、JMdict 派生释义：Creative Commons Attribution-ShareAlike 4.0 International，见 `LICENSE-DATA.md`。
+- 原始真题 PDF、Word、音频、完整真题文本不在本仓库分发，也不由本项目授权。

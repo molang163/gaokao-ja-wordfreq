@@ -1,0 +1,19 @@
+# Licenses
+
+This repository uses multiple licenses.
+
+## Code
+
+The website code and project scripts authored for this repository are licensed under the MIT License.
+
+See `LICENSE-CODE.md`.
+
+## Data and Dictionary-Derived Content
+
+The generated word-frequency data, static JSON data used by the site, and Chinese dictionary glosses derived from JMdict/JMdict-simplified are licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
+
+See `LICENSE-DATA.md`.
+
+## Exam Materials
+
+This repository does not distribute original exam PDFs, Word files, audio files, or full exam texts. Source-labeled short examples are included only as limited study/reference snippets and are not a grant of rights over any third-party material.
