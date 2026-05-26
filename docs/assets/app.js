@@ -196,12 +196,16 @@ function render() {
 }
 
 function dictionaryHtml(dictionary, compact = false) {
-  if (!dictionary || !(dictionary.glosses || []).length) {
+  if (!dictionary || !((dictionary.glosses_zh || []).length || (dictionary.glosses || []).length)) {
     return '<p class="muted">暂无 JMdict 释义，建议打开 Moji 查询。</p>';
   }
-  const glosses = (dictionary.glosses || []).slice(0, compact ? 3 : 4).map(escapeHtml).join('; ');
   const head = [dictionary.headword, dictionary.reading].filter(Boolean).map(escapeHtml).join(' / ');
-  return `<p><strong>${head || 'JMdict'}</strong><br><span class="muted">释义（英）：${glosses}</span></p>`;
+  const zhGlosses = (dictionary.glosses_zh || []).slice(0, compact ? 3 : 4).map(escapeHtml).join('；');
+  if (zhGlosses) {
+    return `<p><strong>${head || 'JMdict'}</strong><br><span class="muted">释义：${zhGlosses}</span></p>`;
+  }
+  const glosses = (dictionary.glosses || []).slice(0, compact ? 3 : 4).map(escapeHtml).join('; ');
+  return `<p><strong>${head || 'JMdict'}</strong><br><span class="muted">暂无中文释义；英文义项：${glosses}</span></p>`;
 }
 
 function examplesHtml(examples, compact = false) {
@@ -330,7 +334,7 @@ async function openDrawer(wordId) {
     <section class="detail-section">
       <h3>词典解释</h3>
       ${dictionaryHtml(word.dictionary)}
-      <p class="muted">释义来自 JMdict/JMdict-simplified；中文释义可继续通过 Moji 查询。</p>
+      <p class="muted">中文释义由 qwen-turbo 基于 JMdict/JMdict-simplified 义项生成；疑难词建议继续用 Moji 核对。</p>
     </section>
 
     <section class="detail-section">
